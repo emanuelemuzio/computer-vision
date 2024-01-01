@@ -1,17 +1,28 @@
 from scipy import linalg
 import numpy as np
 import cv2 as cv
+from sklearn.model_selection import KFold 
+from sklearn.metrics import mean_squared_error as MSE
 
 CUBE = cv.imread('cube.png')
 
-def addEmptyCol(matrix):
-    np.append(matrix, np.zeros((matrix.shape[0],1)), axis=1)
-    return matrix
+def KFoldCrossVal(ground, OPENCVGround, Folds):
+    kf = KFold(n_splits=Folds)
+    
+    mseScores = []
+    
+    for trainIndex, testIndex in kf.split(ground):
+        groundTrain, groundTest = ground[trainIndex], ground[testIndex]
+        OPENCVGroundTrain, OPENCVGroundTest = OPENCVGround[trainIndex], OPENCVGround[testIndex]
+        
+        mse = MSE(groundTest, OPENCVGroundTest)
+        mseScores.append(mse)
+        
+    averageMse = np.mean(mseScores)
+    
+    return averageMse
 
-def projectToGround(points, R, T, K, dist):
-    ground, _ = cv.projectPoints(points, R, T, K, dist)
-    ground = np.squeeze(ground).astype(np.int32)
-    return ground
+        
 
 def getGround(R, T, K, dist):
     
@@ -32,19 +43,17 @@ def getGround(R, T, K, dist):
     points[:,1] = yy 
     points[:,2] = np.zeros((dim))
     
-    return points
-
     ground, _ = cv.projectPoints(points, R, T, K, dist)
     ground = np.squeeze(ground).astype(np.int32)
 
     return ground
 
-def drawGround(ground):
+def drawGround(ground, windowName):
     img_to_show_res = CUBE.copy()
     for p in ground:
         img_to_show_res = cv.circle(img_to_show_res, p, 3, (255, 0, 0) )
     
-    cv.imshow("ground", img_to_show_res)
+    cv.imshow(windowName, img_to_show_res)
     while(True):
         k = cv.waitKey(500)
         if k == -1:  # if no key was pressed, -1 is returned
@@ -67,7 +76,9 @@ def OPENCVCalibrateCamera(points):
     
     K = initiK(img.shape[:-1:])
     
-    return cv.calibrateCamera([objp], [imgp], gray.shape[::-1], K, None, flags=cv.CALIB_USE_INTRINSIC_GUESS|cv.CALIB_USE_EXTRINSIC_GUESS)
+    # L'utilizzo dei flag corretti si è rivelato fondamentale per una corretta proiezione dei punti
+    
+    return cv.calibrateCamera([objp], [imgp], gray.shape[::-1], K, None, flags=cv.CALIB_USE_INTRINSIC_GUESS|cv.CALIB_FIX_S1_S2_S3_S4| cv.CALIB_ZERO_TANGENT_DIST| cv.CALIB_FIX_K2 | cv.CALIB_FIX_K3|cv.CALIB_USE_EXTRINSIC_GUESS)
 
 # Definiamo i punti dell'oggetto usando coordinate 3D "false", usando un sistema che ha origine da un angolo del cubo, e i punti dell'immagine, misurati manualmente
 
