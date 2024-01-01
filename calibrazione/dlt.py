@@ -1,9 +1,86 @@
 from scipy import linalg
 import numpy as np
 import cv2 as cv
-from sklearn import preprocessing
+
+CUBE = cv.imread('cube.png')
+
+def addEmptyCol(matrix):
+    np.append(matrix, np.zeros((matrix.shape[0],1)), axis=1)
+    return matrix
+
+def projectToGround(points, R, T, K, dist):
+    ground, _ = cv.projectPoints(points, R, T, K, dist)
+    ground = np.squeeze(ground).astype(np.int32)
+    return ground
+
+def getGround(R, T, K, dist):
+    
+    # Creiamo la nostra griglia di punti sul pavimento (quindi z = 0)
+    # Proiettiamo usando projectPoints da OpenCV e passiamo intrinseci ed estrinseci calcolati in precedenza
+    
+    xg = np.arange(-5, 10, 0.5) 
+    yg = np.arange(-5, 10, 0.5) 
+    xx, yy = np.meshgrid(xg, yg)
+
+    dim = xx.shape[0]*xx.shape[1]
+    points = np.zeros((dim,3), np.float32)
+
+    xx = xx.reshape(dim)
+    yy = yy.reshape(dim)
+
+    points[:,0] = xx 
+    points[:,1] = yy 
+    points[:,2] = np.zeros((dim))
+    
+    return points
+
+    ground, _ = cv.projectPoints(points, R, T, K, dist)
+    ground = np.squeeze(ground).astype(np.int32)
+
+    return ground
+
+def drawGround(ground):
+    img_to_show_res = CUBE.copy()
+    for p in ground:
+        img_to_show_res = cv.circle(img_to_show_res, p, 3, (255, 0, 0) )
+    
+    cv.imshow("ground", img_to_show_res)
+    while(True):
+        k = cv.waitKey(500)
+        if k == -1:  # if no key was pressed, -1 is returned
+            continue
+        else:
+            break
+    cv.destroyAllWindows()
+
+def OPENCVCalibrateCamera(points):
+    img = cv.imread('cube.png')
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    objp, imgp = getPoints(points)
+    
+    # Setup calibrazione non planare di prova:
+    # - Aggiungiamo una colonna vuota alla matrice usata per i punti dell'immagine, cioè z = 0
+    # - Inizializziamo una matrice di camera K di prova
+    # - Aggiungiamo i flag per una stima iniziale di intrinseche ed estrinseche 
+    
+    np.append(imgp, np.zeros((imgp.shape[0],1)), axis=1)
+    
+    K = initiK(img.shape[:-1:])
+    
+    return cv.calibrateCamera([objp], [imgp], gray.shape[::-1], K, None, flags=cv.CALIB_USE_INTRINSIC_GUESS|cv.CALIB_USE_EXTRINSIC_GUESS)
 
 # Definiamo i punti dell'oggetto usando coordinate 3D "false", usando un sistema che ha origine da un angolo del cubo, e i punti dell'immagine, misurati manualmente
+
+def initiK(shape):
+    # initial guess of K
+    K = np.zeros((3,3))
+
+    K[0,0]=500
+    K[1,1]=500
+    K[2,2]=1
+    K[0,2]=shape[0]/2
+    K[1,2]=shape[1]/2
+    return K
 
 def getPoints(points):
     objp = np.zeros((points, 3), np.float32)
@@ -121,8 +198,6 @@ def drawCubePoints(CUBE, imgp):
     cv.waitKey(0)
     cv.destroyAllWindows()    
     
-# drawCubePoints(CUBE, imgp)
-
 def getKR(P):
     K, R = linalg.rq(P[:3,:3])
     
@@ -139,32 +214,3 @@ def getT(K, P):
     )  
     
     return t
-
-def guess_K(shape):
-    
-    # initial guess of K
-    
-    K = np.zeros((3,3))
-
-    K[0,0]=500
-    K[1,1]=500
-    K[2,2]=1
-    K[0,2]=shape[0]/2
-    K[1,2]=shape[1]/2
-    return K
-
-# K_guess = guess_K(CUBE.shape)
-
-# OPENCV_ret, OPENCV_K, OPENCV_dist, OPENCV_Rs, OPENCV_ts = cv.calibrateCamera(
-#     [objp], 
-#     [imgp], 
-#     CUBE.shape[0:2], 
-#     K_guess, 
-#     None, 
-#     flags=
-#         cv.CALIB_USE_INTRINSIC_GUESS|
-#         cv.CALIB_FIX_S1_S2_S3_S4|
-#         cv.CALIB_ZERO_TANGENT_DIST|
-#         cv.CALIB_FIX_K2|
-#         cv.CALIB_FIX_K3
-# )
