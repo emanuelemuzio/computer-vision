@@ -22,7 +22,6 @@ def KFoldCrossVal(ground, OPENCVGround, Folds):
     
     return averageMse
 
-        
 
 def getGround(R, T, K, dist):
     
@@ -63,7 +62,7 @@ def drawGround(ground, windowName):
     cv.destroyAllWindows()
 
 def OPENCVCalibrateCamera(points):
-    img = cv.imread('cube.png')
+    img = CUBE.copy()
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     objp, imgp = getPoints(points)
     
@@ -96,7 +95,6 @@ def initiK(shape):
 def getPoints(points):
     objp = np.zeros((points, 3), np.float32)
     imgp = np.zeros((points,2), np.float32)
-    
         
     if points >= 6:
         
@@ -179,7 +177,7 @@ def estimateCameraMatrix(objp, imgp, points):
                 -imgp[i,X] * objp[i,X], 
                 -imgp[i,X] * objp[i,Y], 
                 -imgp[i,X] * objp[i,Z], 
-                imgp[i,X]
+                -imgp[i,X]
         ])
          
         A[2 * i + 1:] = np.array(
@@ -192,7 +190,7 @@ def estimateCameraMatrix(objp, imgp, points):
                 -imgp[i,Y] * objp[i,X], 
                 -imgp[i,Y] * objp[i,Y], 
                 -imgp[i,Y] * objp[i,Z], 
-                imgp[i,Y]  
+                -imgp[i,Y]  
             ]
         )
         
