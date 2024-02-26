@@ -1,0 +1,11 @@
+riconoscimento/lfw_funneled
+riconoscimento/gallery
+riconoscimento/lfw_imgs
+riconoscimento/gallery_imgs
+riconoscimento/face_space
+__pycache__
+*.pyc
+riconoscimento/*.mp4
+deep/*.mp4
+deep/train
+*.pkl
