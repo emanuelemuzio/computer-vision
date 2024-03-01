@@ -73,7 +73,15 @@ def gaussianNoise(img):
 
     return blur
 
-# Per ovviare al problema del rumore uniforme applichiamo un avg. filter con kernel 5x5
+# Il non local means è un algoritmo per il restauro delle immagini che agisce a livello dell'intera
+# immagine, piuttosto che localmente come avviene con il local-means: in quest'ultimo caso
+# andiamo infatti a fare scorrere una finestra di una certa dimensione lungo l'immagine e
+# sostituiamo gradualmente i pixel con il valore medio della finestra. Nel caso non locale
+# andiamo a cercare la media dei pixel in tutta l'immagine, pesandoli in base a quanto sono 
+# simili al pixel da sostituire.
+
+# Il filtro bilaterale riduce il rumore preservando i contorni: assegna ai pixel dei
+# pesi che dipendono dalla loro vicinanza e somiglianza
 
 def poissonNoise(img):
     blur = cv.bilateralFilter(img,9,75,75)
@@ -189,10 +197,3 @@ def ICM(d, MAX_ITER):
         iter += 1
                 
     return f
-                
-# img = cv.imread('denoising/gr1/Noisy/R63.bmp', cv.IMREAD_GRAYSCALE)
-# low = impulseNoise(img)
-# icm_test, pixel_changed = ICM(low, 3)
-# cv.imshow(f'Pixel change: {pixel_changed}', icm_test)
-# cv.waitKey(0)
-# cv.destroyAllWindows()
