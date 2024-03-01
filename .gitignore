@@ -9,3 +9,7 @@ riconoscimento/*.mp4
 deep/*.mp4
 deep/train
 *.pkl
+muzio_*.keras
+test.h5
+train.h5
+val.h5
